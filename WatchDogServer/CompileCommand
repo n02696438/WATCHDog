@@ -1,0 +1,1 @@
+g++ -W -Wall WatchDogServer.cpp -o WatchDogServer -I/opt/local/include -L/opt/local/lib $(pkg-config opencv --libs) -llept -ltesseract
