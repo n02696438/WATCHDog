@@ -1,32 +1,37 @@
 #include "OcrHeader.h"
-
+Mat OCRIMAGE;
 int main(int argc, char** argv)
 {
+	int key;
+	//Commented out for DEMO purposes
 	/*pthread_t thread_s;
     int width, height, key;
 	width = 640;  
 	height = 480; 
  	
 	if (argc != 2)
-		quit("Usage: netcv_server <listen_port> ", 0);
+		quit("Usage: WatchDogServer <listen_port> ", 0);
 	
 	listenPort = atoi(argv[1]);
  	
-    img = Mat::zeros( height,width, CV_8UC1);*/
+    img = Mat::zeros( height,width, CV_8UC1);
         
-    /* run the streaming server as a separate thread */
-    /*if (pthread_create(&thread_s, NULL, streamServer, NULL))
+    //run server as own thread
+    if (pthread_create(&thread_s, NULL, streamServer, NULL))
     	quit("pthread_create failed.", 1);
     
     cout << "\n-->Press 'q' to quit." << endl;
-    namedWindow("stream_server", CV_WINDOW_AUTOSIZE);*/
+    namedWindow("stream_server", CV_WINDOW_AUTOSIZE);
 		
-	/*api = new tesseract::TessBaseAPI();
+	api = new tesseract::TessBaseAPI();
    	// Initialize tesseract-ocr with English, without specifying tessdata path
     if (api->Init(NULL, "eng")) {
     	fprintf(stderr, "Could not initialize tesseract.\n");
         exit(1);
     }
+	//-- 1. Load the cascades for facial detection
+    if( !face_cascade.load( face_cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
+    if( !eyes_cascade.load( eyes_cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
 
 
     while(key != 'q')
@@ -35,14 +40,16 @@ int main(int argc, char** argv)
         if (is_data_ready) 
 		{
 			cv::flip(img,img,1);
-			//img = DetectAndDisplay(img);
+			img = detectAndDisplay(img);
             imshow("stream_server", img);
 			is_data_ready = 0;					
         }
 		if(key == 'c')
 		{
 			try{
-				cropForOCR(img);}
+				OCRIMAGE = img;//imgForOCR = detectAndDisplay(imgForOCR);
+				cropForOCR(OCRIMAGE);
+		}
 			catch(exception e){
 				std::cout << "Error during License OCR" <<std::endl;}
 		}
@@ -55,6 +62,7 @@ int main(int argc, char** argv)
 
     destroyWindow("stream_server");
     quit("NULL", 0);*/
+
 	api = new tesseract::TessBaseAPI();
 	api->Init(NULL, "eng");
 	//-- 1. Load the cascades
@@ -66,18 +74,43 @@ int main(int argc, char** argv)
         cout <<  "Could not open or find the image" << std::endl ;
         return -1;
     }
-	imgForOCR = detectAndDisplay(imgForOCR);
-	cropForOCR(imgForOCR);
+	VideoCapture cap(0); // open the default camera
+    if(!cap.isOpened())  // check if we succeeded
+        return -1;
+	Mat frame;
+	while(key != 'q')
+	{
+		cap >> frame;
+        imshow("stream_server", frame);					
+        
+		if(key == 'c')
+		{
+			try{
+				OCRIMAGE = detectAndDisplay(frame);
+				cvtColor(OCRIMAGE, OCRIMAGE, CV_BGR2GRAY);
+				cropForOCR(OCRIMAGE);
+		}
+			catch(exception e){
+				std::cout << "Error during License OCR" <<std::endl;}
+		}
+        key = waitKey(10);
+	}
 	
-	waitKey(0);
+    
+	//imgForOCR = detectAndDisplay(frame);
+	//cropForOCR(imgForOCR);
+	
+	//waitKey(0);
 	
 	//return 0;
 }
 
 void cropForOCR(Mat LicenseImg)
 {
+	src_gray = LicenseImg;
+	
 	//Mat LicenseImgGray,LicenseImgFinal;
-	cvtColor( LicenseImg, src_gray, CV_BGR2GRAY);
+	//cvtColor( LicenseImg, License/*src_gray*/, CV_BGR2GRAY);
 
     /// Create a window for sliders
 	namedWindow( Threshold_Window, CV_WINDOW_AUTOSIZE );
@@ -168,8 +201,8 @@ void showImage(){
 	{
 		int cropHeight = ROI.size().height;
 		int cropWidth = ROI.size().width;
-		threshold(ROI(Rect(cropWidth*.38,cropHeight*.45,cropWidth*.24,cropHeight*.16)),NameFrame,NameThresh, max_BINARY_value,threshold_type );
-		threshold(ROI(Rect(cropWidth*.44,cropHeight*.35,cropWidth*.28,cropHeight*.12)),IDFrame,IDThresh, max_BINARY_value,threshold_type );
+		threshold(ROI(Rect(cropWidth*.365,cropHeight*.19,cropWidth*.24,cropHeight*.08)),NameFrame,NameThresh, max_BINARY_value,threshold_type );
+		threshold(ROI(Rect(cropWidth*.33,cropHeight*.25,cropWidth*.28,cropHeight*.12)),IDFrame,IDThresh, max_BINARY_value,threshold_type );
 		imwrite("CroppedL.png",ROI);
 		//imwrite("CroppedID.png",ROI(Rect(cropWidth*.44,cropHeight*.35,cropWidth*.28,cropHeight*.12)));
 		//imwrite("CroppedName.png",ROI(Rect(cropWidth*.38,cropHeight*.45,cropWidth*.24,cropHeight*.16)));
@@ -188,8 +221,8 @@ void showImage(){
 		api->SetImage(image);
 		// Get OCR result
 	   	STRING NameText = api->GetUTF8Text();
-		std::cout << "ID Number: " << IDText.string() << std::endl;
-		std::cout << "Name: " << NameText.string() << std::endl;
+		std::cout << "Name: " << IDText.string() << std::endl;
+		std::cout << "ID Number: " << NameText.string() << std::endl;
 	}
 }
 

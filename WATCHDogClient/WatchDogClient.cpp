@@ -33,7 +33,7 @@ int main(int argc, char** argv)
         int         key;
 
         if (argc < 3) {
-                quit("Usage: netcv_client <server_ip> <server_port> <input_file>(optional)", 0);
+                quit("Invalid parameters. Command: WatchDogClient WatchDogServer_ip WatchDogServer_port ", 0);
         }
         if (argc == 4) {
                 capture.open(argv[4]);
@@ -50,8 +50,7 @@ int main(int argc, char** argv)
 
         capture >> img0;
         img1 = Mat::zeros(img0.rows, img0.cols ,CV_8UC1);
-	//cout << "Calling python\n" << endl;
-	//system("python srd.py");
+	
         // run the streaming client as a separate thread 
         if (pthread_create(&thread_c, NULL, streamClient, NULL)) {
                 quit("\n--> pthread_create failed.", 1);
@@ -62,12 +61,7 @@ int main(int argc, char** argv)
 
         cout << "\n--> Press 'q' to quit. \n\n" << endl;
 
-        /* print the width and height of the frame, needed by the client */
         cout << "\n--> Transferring  (" << img0.cols << "x" << img0.rows << ")  images to the:  " << server_ip << ":" << server_port << endl;
-
-       // namedWindow("stream_client", CV_WINDOW_AUTOSIZE);
-       //                 flip(img0, img0, 1);
-       //                 cvtColor(img0, img1, CV_BGR2GRAY);
 
         while(key != 'q') {
 		/* get a frame from camera */
@@ -83,29 +77,23 @@ int main(int argc, char** argv)
 
                 pthread_mutex_unlock(&mutex);
 
-                /*also display the video here on client */
-	
-              // imshow("stream_client", img0);
                 key = waitKey(30);
         }
 
-        /* user has pressed 'q', terminate the streaming client */
+        //if q is pressed, close client application
         if (pthread_cancel(thread_c)) {
                 quit("\n--> pthread_cancel failed.", 1);
         }
 
-        /* free memory */
-        //destroyWindow("stream_client");
+     
         quit("\n--> NULL", 0);
 return 0;
 }
 
 void* keyListen(void* arg)
 {
-//	while(1){
 		system("python srd.py");
-//		usleep(3000);
-//	}
+
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
@@ -168,9 +156,7 @@ void* streamClient(void* arg)
         }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**
- * this function provides a way to exit nicely from the system
- */
+
 void quit(string msg, int retval)
 {
         if (retval == 0) {

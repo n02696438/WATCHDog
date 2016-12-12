@@ -29,10 +29,10 @@ int 	listenPort;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 ///Threshold Slider VARIABLES
-int threshold_value = 145;
+int threshold_value = 130;
 int threshold_type = 0;
-int threshold_ID_value = 145;
-int threshold_Name_value = 145;
+int threshold_ID_value = 130;
+int threshold_Name_value = 110;
 int threshold_done = 0;
 int const max_value = 255;
 int const max_type = 4;
